@@ -1,0 +1,6 @@
+grader_type,rbf_score_mean,rbf_score_std,accuracy_mean,accuracy_std,spearman_mean,spearman_std
+accuracy_60pct,69.6061,2.7083,0.6955,0.0271,0.6001,0.076
+accuracy_70pct,76.9881,2.3867,0.7694,0.0239,0.693,0.0661
+accuracy_80pct,84.7792,1.9357,0.8475,0.0194,0.8001,0.0547
+correlation_60pct,37.0923,4.783,0.3692,0.048,0.5289,0.0673
+correlation_70pct,41.827,5.1593,0.4165,0.0517,0.6313,0.0579
