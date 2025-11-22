@@ -9,11 +9,11 @@ import seaborn as sns
 sns.set_style("whitegrid")
 
 # RBF kernel parameters
-sigma = 0.3
+sigma = 0.7
 
 # Create figure
 fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-fig.suptitle('RBF Kernel Analysis for Likert Scale Scoring (σ=0.3)',
+fig.suptitle('RBF Kernel Analysis for Likert Scale Scoring (σ=0.7)',
              fontsize=16, fontweight='bold')
 
 # 1. RBF Kernel Shape
@@ -158,7 +158,7 @@ print("RBF kernel analysis saved to: rbfsim/rbf_kernel_analysis.png")
 
 # Print detailed analysis
 print("\n" + "="*80)
-print("RBF KERNEL DETAILED ANALYSIS (σ=0.3)")
+print("RBF KERNEL DETAILED ANALYSIS (σ=0.7)")
 print("="*80)
 print("\nScore for different prediction errors:")
 print("-"*80)
@@ -166,18 +166,21 @@ print(f"{'Error (|GT - Pred|)':<25} {'RBF Score':<20} {'Binary Accuracy':<20}")
 print("-"*80)
 
 for diff in range(5):
-    rbf_score = np.exp(-diff**2 / (2 * 0.3**2))
+    rbf_score = np.exp(-diff**2 / (2 * 0.7**2))
     binary = 1.0 if diff == 0 else 0.0
     print(f"{diff:<25} {rbf_score:<20.4f} {binary:<20.1f}")
 
 print("-"*80)
 print("\nKey Observations:")
-print("  • Error of 0 (exact match): 1.000 RBF score (100% similarity)")
-print("  • Error of 1 (off by one): 0.011 RBF score (1.1% similarity)")
-print("  • Error of 2 (off by two): 0.000 RBF score (essentially 0%)")
-print("\nWith σ=0.3, the RBF kernel is VERY strict:")
-print("  → Even being off by 1 point gives almost no credit (1.1%)")
-print("  → This is close to binary accuracy but slightly more forgiving for small errors")
+error_1_score = np.exp(-1**2 / (2 * 0.7**2))
+error_2_score = np.exp(-2**2 / (2 * 0.7**2))
+print(f"  • Error of 0 (exact match): 1.000 RBF score (100% similarity)")
+print(f"  • Error of 1 (off by one): {error_1_score:.3f} RBF score ({error_1_score*100:.1f}% similarity)")
+print(f"  • Error of 2 (off by two): {error_2_score:.3f} RBF score ({error_2_score*100:.1f}% similarity)")
+print("\nWith σ=0.7, the RBF kernel is more BALANCED:")
+print(f"  → Being off by 1 point gives {error_1_score*100:.1f}% credit")
+print(f"  → Being off by 2 points still gives {error_2_score*100:.1f}% credit")
+print("  → This provides meaningful partial credit for near-misses")
 print("\n" + "="*80)
 
 plt.close('all')

@@ -223,7 +223,7 @@ def main():
     simulator = LikertRBFSimulator(
         n_questions=100,
         scale_probs=[0.10, 0.15, 0.30, 0.30, 0.15],
-        sigma=0.3,
+        sigma=0.7,
         n_simulations=1000
     )
 
