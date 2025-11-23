@@ -15,20 +15,20 @@ class LikertRBFSimulator:
     """Simulator for Likert scale assessment with RBF scoring."""
 
     def __init__(self, n_questions: int = 100,
-                 scale_probs: list = [0.10, 0.15, 0.30, 0.30, 0.15],
-                 sigma: float = 0.3,
+                 scale_probs: list = [0.10, 0.25, 0.40, 0.25],
+                 sigma: float = 0.5,
                  n_simulations: int = 1000):
         """
         Initialize the simulator.
 
         Args:
             n_questions: Number of questions in the assessment
-            scale_probs: Probability distribution for scale values 1-5
+            scale_probs: Probability distribution for scale values 1-4
             sigma: Standard deviation for RBF kernel
             n_simulations: Number of simulation runs
         """
         self.n_questions = n_questions
-        self.scale_values = np.array([1, 2, 3, 4, 5])
+        self.scale_values = np.array([1, 2, 3, 4])
         self.scale_probs = np.array(scale_probs)
         self.sigma = sigma
         self.n_simulations = n_simulations
@@ -222,14 +222,14 @@ def main():
     # Initialize simulator
     simulator = LikertRBFSimulator(
         n_questions=100,
-        scale_probs=[0.10, 0.15, 0.30, 0.30, 0.15],
-        sigma=0.7,
+        scale_probs=[0.10, 0.25, 0.40, 0.25],  # 4-point scale distribution
+        sigma=0.5,
         n_simulations=1000
     )
 
     print("Simulation Parameters:")
     print(f"  Number of questions: {simulator.n_questions}")
-    print(f"  Scale: 1-5 (Likert)")
+    print(f"  Scale: 1-4 (4-point Likert)")
     print(f"  Ground truth distribution: {dict(zip(simulator.scale_values, simulator.scale_probs))}")
     print(f"  RBF sigma: {simulator.sigma}")
     print(f"  Number of simulations: {simulator.n_simulations}")

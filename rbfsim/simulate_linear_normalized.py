@@ -15,18 +15,18 @@ class LikertLinearSimulator:
     """Simulator for Likert scale assessment with linear normalized distance scoring."""
 
     def __init__(self, n_questions: int = 100,
-                 scale_probs: list = [0.10, 0.15, 0.30, 0.30, 0.15],
+                 scale_probs: list = [0.10, 0.25, 0.40, 0.25],
                  n_simulations: int = 1000):
         """
         Initialize the simulator.
 
         Args:
             n_questions: Number of questions in the assessment
-            scale_probs: Probability distribution for scale values 1-5
+            scale_probs: Probability distribution for scale values 1-4
             n_simulations: Number of simulation runs
         """
         self.n_questions = n_questions
-        self.scale_values = np.array([1, 2, 3, 4, 5])
+        self.scale_values = np.array([1, 2, 3, 4])
         self.scale_probs = np.array(scale_probs)
         self.max_error = np.max(self.scale_values) - np.min(self.scale_values)
         self.n_simulations = n_simulations
@@ -214,13 +214,13 @@ def main():
     # Initialize simulator
     simulator = LikertLinearSimulator(
         n_questions=100,
-        scale_probs=[0.10, 0.15, 0.30, 0.30, 0.15],
+        scale_probs=[0.10, 0.25, 0.40, 0.25],
         n_simulations=1000
     )
 
     print("Simulation Parameters:")
     print(f"  Number of questions: {simulator.n_questions}")
-    print(f"  Scale: 1-5 (Likert)")
+    print(f"  Scale: 1-4 (4-point Likert)")
     print(f"  Ground truth distribution: {dict(zip(simulator.scale_values, simulator.scale_probs))}")
     print(f"  Scoring: Linear normalized distance (1 - error/max_error)")
     print(f"  Max error: {simulator.max_error}")
