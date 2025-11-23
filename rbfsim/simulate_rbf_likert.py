@@ -1,8 +1,14 @@
 """
 Simulation of RBF (Gaussian Similarity) scoring for Likert scale assessments.
 
-This script simulates different grader performance levels (accuracy-based and correlation-based)
-and computes their RBF scores to understand what constitutes a "good" score.
+This script implements a principled scoring approach that accounts for uncertainty in
+the ground truth itself. Sigma (σ) represents the standard deviation of inter-expert
+disagreement, not a "leniency parameter."
+
+The RBF score is the unnormalized Gaussian likelihood: exp(-(answer - GT)² / (2σ²))
+
+Key principle: If experts disagree on ground truth (high σ), examinees shouldn't be
+heavily penalized for answers within the range of expert disagreement.
 """
 
 import numpy as np
@@ -24,7 +30,9 @@ class LikertRBFSimulator:
         Args:
             n_questions: Number of questions in the assessment
             scale_probs: Probability distribution for scale values 1-4
-            sigma: Standard deviation for RBF kernel
+            sigma: Standard deviation of ground truth uncertainty (inter-expert disagreement)
+                   Should be empirically estimated from inter-rater reliability studies.
+                   Example: If 3 experts rate as [3,3,4], SD≈0.47≈0.5
             n_simulations: Number of simulation runs
         """
         self.n_questions = n_questions
@@ -45,12 +53,16 @@ class LikertRBFSimulator:
 
         Score = sum(exp(-|pred - gt|^2 / (2 * sigma^2)))
 
+        This is the unnormalized Gaussian likelihood of the predictions under N(gt, sigma).
+        Interpretation: How likely are the examinee's answers given that the ground truth
+        itself has uncertainty (variance sigma^2) due to inter-expert disagreement?
+
         Args:
-            predictions: Predicted answers
-            ground_truth: True answers
+            predictions: Examinee's answers
+            ground_truth: Ground truth answers (may have inherent uncertainty)
 
         Returns:
-            Total RBF score across all questions
+            Total RBF score across all questions (max = n_questions for perfect match)
         """
         diff_squared = (predictions - ground_truth) ** 2
         similarities = np.exp(-diff_squared / (2 * self.sigma ** 2))

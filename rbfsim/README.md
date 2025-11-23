@@ -2,31 +2,44 @@
 
 ## Overview
 
-This simulation explores a scoring system for assessing performance on a Likert scale assessment (1-5 scale) using an RBF (Radial Basis Function) kernel instead of binary accuracy.
+This simulation explores a **principled scoring system** for Likert scale assessments that accounts for **uncertainty in the ground truth itself**. When multiple experts disagree on the "correct" answer, we shouldn't heavily penalize examinees for being close.
 
 ## Problem Statement
 
 **Traditional approach**: Binary 0-1 loss - either the answer is exactly correct (1 point) or wrong (0 points).
+- **Issue**: Assumes ground truth is perfectly certain
+- **Issue**: Doesn't account for inter-rater disagreement among experts
 
-**RBF approach**: Acknowledges that Likert scale responses can have natural variation. Uses Gaussian similarity:
+**RBF approach**: Models ground truth as having uncertainty (variance σ²):
 
 ```
-Score = exp(-|prediction - ground_truth|² / (2σ²))
+Score = exp(-|examinee_answer - ground_truth|² / (2σ²))
 ```
 
-**Question**: What constitutes a "good" RBF score? If 80% accuracy is considered good in binary scoring, what's the equivalent RBF score?
+This is the **unnormalized Gaussian likelihood** of the examinee's answer under N(ground_truth, σ).
+
+**Interpretation**:
+- σ represents the **standard deviation of expert disagreement**
+- If 3 experts give [4, 3, 3] → mean=3.33, SD≈0.5, so use σ=0.5
+- The score reflects how consistent the examinee's answer is with the uncertain ground truth
+
+**Question**: What constitutes a "good" RBF score given ground truth uncertainty σ?
 
 ## Simulation Setup
 
+**Current parameters** (4-point scale with moderate ground truth uncertainty):
+
 - **Number of questions**: 100
-- **Scale**: 1-5 (5-point Likert scale)
+- **Scale**: 1-4 (4-point Likert scale)
 - **Ground truth distribution**:
   - 1: 10%
-  - 2: 15%
-  - 3: 30%
-  - 4: 30%
-  - 5: 15%
-- **Sigma (σ)**: 0.7
+  - 2: 25%
+  - 3: 40%
+  - 4: 25%
+- **Sigma (σ)**: 0.5
+  - **Interpretation**: Ground truth has SD=0.5 (moderate inter-expert disagreement)
+  - **Example**: If experts give [3, 3, 4], SD≈0.47≈0.5
+  - **Rationale**: Should be estimated from actual inter-rater reliability studies
 - **Number of simulations**: 1000
 
 ## Grader Types Simulated
@@ -52,66 +65,101 @@ Score = exp(-|prediction - ground_truth|² / (2σ²))
 
 ## Key Results
 
-### Summary Statistics (σ=0.7)
+### Summary Statistics (4-point scale, σ=0.5)
 
 | Grader Type | RBF Score (Mean ± SD) | Accuracy (Mean ± SD) | Spearman Corr (Mean ± SD) | Normalized RBF % |
 |-------------|----------------------|---------------------|--------------------------|------------------|
-| accuracy_80pct | 87.61 ± 1.70 | 84.7% ± 1.9% | 0.799 ± 0.053 | 87.6% |
-| accuracy_70pct | 81.32 ± 2.06 | 77.0% ± 2.3% | 0.699 ± 0.063 | 81.3% |
-| accuracy_60pct | 75.18 ± 2.34 | 69.4% ± 2.6% | 0.600 ± 0.073 | 75.2% |
-| correlation_70pct | 58.32 ± 3.78 | 41.4% ± 5.0% | 0.629 ± 0.059 | 58.3% |
-| correlation_60pct | 53.61 ± 3.81 | 36.8% ± 4.7% | 0.527 ± 0.072 | 53.6% |
+| accuracy_80pct | 87.3 ± 1.9 | 86.1% ± 2.0% | 0.801 ± 0.052 | 87.3% |
+| accuracy_70pct | 80.6 ± 2.3 | 78.8% ± 2.5% | 0.698 ± 0.065 | 80.6% |
+| accuracy_60pct | 74.3 ± 2.8 | 71.8% ± 3.0% | 0.596 ± 0.076 | 74.3% |
+| correlation_70pct | 56.4 ± 4.7 | 50.4% ± 5.3% | 0.603 ± 0.061 | 56.4% |
+| correlation_60pct | 51.2 ± 4.6 | 44.9% ± 5.1% | 0.502 ± 0.073 | 51.2% |
 
 ### Key Findings
 
-1. **Balanced Partial Credit** (with σ=0.7):
-   - Being off by 1 point gives **36.0% credit** (meaningful partial credit)
-   - Being off by 2 points gives **1.7% credit** (small partial credit)
-   - Being off by 3+ points gives essentially 0% credit
+1. **Partial Credit reflects Ground Truth Uncertainty** (with σ=0.5):
+   - Error of 0 (exact match): 1.000 score (100% - examinee matches GT exactly)
+   - Error of 1 (off by one): **0.135 score (13.5%)** - within 2σ of GT distribution
+   - Error of 2 (off by two): 0.003 score (0.3%) - outside reasonable GT variance
+   - Error of 3 (opposite end): 0.000 score (0%) - incompatible with GT distribution
+
+   **Interpretation**: With σ=0.5, being off by 1 unit gets modest credit because experts
+   themselves might disagree by ±1 unit. Being off by 2+ units is outside the range of
+   reasonable expert disagreement and gets essentially no credit.
 
 2. **Accuracy-based graders**:
-   - 80% known (84.7% actual) → RBF score ≈ 87.6 (87.6% of max)
-   - 70% known (77.0% actual) → RBF score ≈ 81.3 (81.3% of max)
-   - 60% known (69.4% actual) → RBF score ≈ 75.2 (75.2% of max)
-   - RBF scores are higher than actual accuracy due to meaningful partial credit for near-misses
+   - 80% known (86.1% actual) → RBF score ≈ 87.3 (87.3% of max)
+   - 70% known (78.8% actual) → RBF score ≈ 80.6 (80.6% of max)
+   - 60% known (71.8% actual) → RBF score ≈ 74.3 (74.3% of max)
+   - RBF scores slightly higher than actual accuracy due to partial credit for answers
+     within the ground truth uncertainty range
 
 3. **Correlation-based graders**:
-   - 70% correlation → only 41.4% accuracy, but RBF ≈ 58.3
-   - 60% correlation → only 36.8% accuracy, but RBF ≈ 53.6
+   - 70% correlation → 50.4% accuracy, RBF ≈ 56.4
+   - 60% correlation → 44.9% accuracy, RBF ≈ 51.2
    - **Important**: High correlation does NOT imply high accuracy!
-   - However, correlation-based graders benefit significantly from partial credit (they tend to be "close")
+   - Correlation-based graders benefit moderately from partial credit (they tend to be
+     "close" but not exact)
 
-4. **RBF Kernel with σ=0.7 provides BALANCED scoring**:
-   - Error of 0 (exact match): 1.000 score (100%)
-   - Error of 1 (off by one): 0.360 score (36%)
-   - Error of 2 (off by two): 0.017 score (1.7%)
-   - Error of 3+: essentially 0.000 score
-   - This appropriately rewards "close" answers on Likert scales
+4. **Ground Truth Uncertainty Principle**:
+   - σ=0.5 represents moderate expert disagreement
+   - Examinee answers within ±1σ of ground truth receive partial credit
+   - This is **fair**: if experts disagree, examinees shouldn't be heavily penalized
+     for falling within the range of expert responses
+   - σ should be empirically estimated from inter-rater reliability studies, not arbitrarily chosen
 
 ## Interpreting "Good" Scores
 
-Based on the simulation with σ=0.7:
+Based on the simulation with σ=0.5 (4-point scale):
 
-- **Excellent**: RBF score ≥ 87 (equivalent to ~80% known/~85% actual accuracy)
-- **Good**: RBF score ≥ 81 (equivalent to ~70% known/~77% actual accuracy)
-- **Acceptable**: RBF score ≥ 75 (equivalent to ~60% known/~69% actual accuracy)
-- **Needs Improvement**: RBF score < 75 (equivalent to <60% known/<69% actual accuracy)
+- **Excellent**: RBF score ≥ 87 (equivalent to ~80% known/~86% actual accuracy)
+- **Good**: RBF score ≥ 81 (equivalent to ~70% known/~79% actual accuracy)
+- **Acceptable**: RBF score ≥ 74 (equivalent to ~60% known/~72% actual accuracy)
+- **Needs Improvement**: RBF score < 74
 
-## Effect of Sigma (σ)
+## Understanding Sigma (σ): Ground Truth Uncertainty
 
-The choice of σ dramatically affects the scoring:
+**σ is NOT a tuning parameter** - it should reflect actual measurement uncertainty.
 
-- **Small σ (e.g., 0.1-0.3)**: Very strict, close to binary accuracy
-  - Only gives significant credit for exact matches
-  - Small errors are heavily penalized
+### How to Determine Sigma
 
-- **Medium σ (e.g., 0.5-1.0)**: More lenient
-  - Gives partial credit for near-misses
-  - Error of 1 might give 30-60% credit
+1. **Empirical approach** (recommended):
+   - Collect ratings from multiple independent experts on the same questions
+   - For each question, calculate SD of expert ratings
+   - Average these SDs across questions → this is your σ
+   - Example: If experts consistently disagree by ±0.5 points, use σ=0.5
 
-- **Large σ (e.g., >1.5)**: Very lenient
-  - Substantial credit for answers within 1-2 points
-  - May be too forgiving for assessment purposes
+2. **Theoretical approach**:
+   - Consider the scale granularity and expected inter-rater reliability
+   - Higher inter-rater reliability → smaller σ
+   - For Likert scales, typical values: σ ∈ [0.3, 0.7]
+
+### Effect of Sigma on Scoring
+
+The value of σ reflects **how uncertain the ground truth is**:
+
+- **Small σ (e.g., 0.1-0.3)**: High expert agreement
+  - Experts strongly agree on correct answers
+  - Being off by 1 unit is penalized heavily (it's outside expert variation)
+  - Use when inter-rater reliability is very high (Krippendorff's α > 0.9)
+
+- **Medium σ (e.g., 0.4-0.7)**: Moderate expert disagreement
+  - Experts sometimes disagree by ±1 unit
+  - Being off by 1 unit receives modest partial credit
+  - Use when inter-rater reliability is moderate (Krippendorff's α ≈ 0.7-0.9)
+  - **Current choice: σ=0.5** assumes moderate uncertainty
+
+- **Large σ (e.g., >0.8)**: Low expert agreement
+  - Experts frequently disagree significantly
+  - Being off by 1-2 units receives substantial credit
+  - Use when inter-rater reliability is low (Krippendorff's α < 0.7)
+  - May indicate the questions are ambiguous and need revision
+
+### Key Principle
+
+**Don't arbitrarily choose σ to make scores "look good"**. Estimate it from actual expert
+disagreement. If σ is high, it means your assessment has measurement problems that should
+be addressed by improving question clarity, not by manipulating the scoring function.
 
 ## Files Generated
 
