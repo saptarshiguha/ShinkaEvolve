@@ -26,15 +26,25 @@ Score = exp(-|prediction - ground_truth|² / (2σ²))
   - 3: 30%
   - 4: 30%
   - 5: 15%
-- **Sigma (σ)**: 0.3
+- **Sigma (σ)**: 0.7
 - **Number of simulations**: 1000
 
 ## Grader Types Simulated
 
 1. **Accuracy-based graders**:
-   - Grader 1: 80% accuracy
-   - Grader 2: 70% accuracy
-   - Grader 3: 60% accuracy
+   - Grader 1: 80% known (answers 80% correctly, guesses on remaining 20%)
+   - Grader 2: 70% known (answers 70% correctly, guesses on remaining 30%)
+   - Grader 3: 60% known (answers 60% correctly, guesses on remaining 40%)
+
+   **Note**: These graders have higher actual accuracy than the label suggests because random guessing
+   sometimes produces correct answers by chance. The probability of a correct random guess is 23.5%
+   (based on the ground truth distribution). Therefore:
+   - 80% known → 84.7% actual accuracy (80% + 20%×23.5%)
+   - 70% known → 77.0% actual accuracy (70% + 30%×23.5%)
+   - 60% known → 69.4% actual accuracy (60% + 40%×23.5%)
+
+   This more realistically models human behavior: when uncertain, people guess rather than
+   deliberately choosing wrong answers.
 
 2. **Correlation-based graders**:
    - Grader 4: 70% Spearman correlation
@@ -42,50 +52,50 @@ Score = exp(-|prediction - ground_truth|² / (2σ²))
 
 ## Key Results
 
-### Summary Statistics
+### Summary Statistics (σ=0.7)
 
 | Grader Type | RBF Score (Mean ± SD) | Accuracy (Mean ± SD) | Spearman Corr (Mean ± SD) | Normalized RBF % |
 |-------------|----------------------|---------------------|--------------------------|------------------|
-| accuracy_80pct | 84.78 ± 1.94 | 84.8% ± 1.9% | 0.800 ± 0.055 | 84.8% |
-| accuracy_70pct | 76.99 ± 2.39 | 76.9% ± 2.4% | 0.693 ± 0.066 | 77.0% |
-| accuracy_60pct | 69.61 ± 2.71 | 69.5% ± 2.7% | 0.600 ± 0.076 | 69.6% |
-| correlation_70pct | 41.83 ± 5.16 | 41.6% ± 5.2% | 0.631 ± 0.058 | 41.8% |
-| correlation_60pct | 37.09 ± 4.78 | 36.9% ± 4.8% | 0.529 ± 0.067 | 37.1% |
+| accuracy_80pct | 87.61 ± 1.70 | 84.7% ± 1.9% | 0.799 ± 0.053 | 87.6% |
+| accuracy_70pct | 81.32 ± 2.06 | 77.0% ± 2.3% | 0.699 ± 0.063 | 81.3% |
+| accuracy_60pct | 75.18 ± 2.34 | 69.4% ± 2.6% | 0.600 ± 0.073 | 75.2% |
+| correlation_70pct | 58.32 ± 3.78 | 41.4% ± 5.0% | 0.629 ± 0.059 | 58.3% |
+| correlation_60pct | 53.61 ± 3.81 | 36.8% ± 4.7% | 0.527 ± 0.072 | 53.6% |
 
 ### Key Findings
 
-1. **RBF Score ≈ Accuracy** (with σ=0.3):
-   - The RBF score is nearly identical to accuracy percentage
-   - This is because σ=0.3 makes the kernel very strict
-   - Being off by 1 point gives only 0.39% credit
-   - Being off by 2+ points gives essentially 0% credit
+1. **Balanced Partial Credit** (with σ=0.7):
+   - Being off by 1 point gives **36.0% credit** (meaningful partial credit)
+   - Being off by 2 points gives **1.7% credit** (small partial credit)
+   - Being off by 3+ points gives essentially 0% credit
 
 2. **Accuracy-based graders**:
-   - 80% accuracy → RBF score ≈ 84.8 (84.8% of max)
-   - 70% accuracy → RBF score ≈ 77.0 (77.0% of max)
-   - 60% accuracy → RBF score ≈ 69.6 (69.6% of max)
-   - RBF scores are slightly higher than accuracy due to small partial credit for near-misses
+   - 80% known (84.7% actual) → RBF score ≈ 87.6 (87.6% of max)
+   - 70% known (77.0% actual) → RBF score ≈ 81.3 (81.3% of max)
+   - 60% known (69.4% actual) → RBF score ≈ 75.2 (75.2% of max)
+   - RBF scores are higher than actual accuracy due to meaningful partial credit for near-misses
 
 3. **Correlation-based graders**:
-   - 70% correlation → only 41.6% accuracy, RBF ≈ 41.8
-   - 60% correlation → only 36.9% accuracy, RBF ≈ 37.1
+   - 70% correlation → only 41.4% accuracy, but RBF ≈ 58.3
+   - 60% correlation → only 36.8% accuracy, but RBF ≈ 53.6
    - **Important**: High correlation does NOT imply high accuracy!
-   - A grader can have good rank ordering (correlation) but poor exact matching
+   - However, correlation-based graders benefit significantly from partial credit (they tend to be "close")
 
-4. **RBF Kernel with σ=0.3 is VERY STRICT**:
-   - Error of 0 (exact match): 1.000 score
-   - Error of 1 (off by one): 0.0039 score (0.39%)
-   - Error of 2+: essentially 0.000 score
-   - This makes RBF scoring very similar to binary accuracy
+4. **RBF Kernel with σ=0.7 provides BALANCED scoring**:
+   - Error of 0 (exact match): 1.000 score (100%)
+   - Error of 1 (off by one): 0.360 score (36%)
+   - Error of 2 (off by two): 0.017 score (1.7%)
+   - Error of 3+: essentially 0.000 score
+   - This appropriately rewards "close" answers on Likert scales
 
 ## Interpreting "Good" Scores
 
-Based on the simulation with σ=0.3:
+Based on the simulation with σ=0.7:
 
-- **Excellent**: RBF score ≥ 85 (equivalent to ≥80% accuracy)
-- **Good**: RBF score ≥ 77 (equivalent to ≥70% accuracy)
-- **Acceptable**: RBF score ≥ 70 (equivalent to ≥60% accuracy)
-- **Poor**: RBF score < 70 (equivalent to <60% accuracy)
+- **Excellent**: RBF score ≥ 87 (equivalent to ~80% known/~85% actual accuracy)
+- **Good**: RBF score ≥ 81 (equivalent to ~70% known/~77% actual accuracy)
+- **Acceptable**: RBF score ≥ 75 (equivalent to ~60% known/~69% actual accuracy)
+- **Needs Improvement**: RBF score < 75 (equivalent to <60% known/<69% actual accuracy)
 
 ## Effect of Sigma (σ)
 
